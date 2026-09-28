@@ -24,6 +24,7 @@ export interface HostedWebsite {
   dbCount: number;
   cms: string;
   uptime90Days: number;
+  registeredDomainId?: string;
   previewDetails: {
     heroTitle: string;
     heroSubtitle: string;
@@ -35,6 +36,31 @@ export interface HostedWebsite {
   };
 }
 
+export interface RegisteredDomain {
+  id: string;
+  domain: string;
+  tld: string;
+  category: string;
+  annualPriceZAR: number;
+  status: 'active' | 'pending_renewal' | 'grace_period' | 'expired';
+  renewalDate: string;
+  daysRemaining: number;
+  autoRenew: boolean;
+  dnssec: boolean;
+  whoisPrivacy: boolean;
+  linkedWebsite?: string;
+  nameservers: string[];
+}
+
+export interface DomainPricingTier {
+  tld: string;
+  yearlyPriceZAR: number;
+  renewalPriceZAR: number;
+  description: string;
+  popular?: boolean;
+  highlightNote?: string;
+}
+
 export interface HostingPlanFeature {
   name: string;
   included: boolean;
@@ -43,12 +69,14 @@ export interface HostingPlanFeature {
 
 export interface Invoice {
   id: string;
-  websiteId: string;
+  websiteId?: string;
   domainName: string;
+  type?: 'hosting' | 'domain' | 'bundle';
   amountZAR: number;
   dateIssued: string;
   dueDate: string;
   status: 'Paid' | 'Unpaid' | 'Overdue';
   paymentMethod?: string;
   receiptNumber?: string;
+  description?: string;
 }

@@ -2,14 +2,15 @@ import React from 'react';
 import { 
   Globe, Server, FileText, Zap, ShieldCheck, Plus, 
   ExternalLink, ChevronRight, Activity, Terminal, 
-  Sliders, Bell, Layers, LogOut, CheckCircle2 
+  Sliders, Bell, Layers, LogOut, CheckCircle2, AtSign 
 } from 'lucide-react';
 
 interface SidebarProps {
-  activeTab: 'websites' | 'pricing' | 'invoices' | 'server';
-  setActiveTab: (tab: 'websites' | 'pricing' | 'invoices' | 'server') => void;
+  activeTab: 'websites' | 'domains' | 'pricing' | 'invoices' | 'server';
+  setActiveTab: (tab: 'websites' | 'domains' | 'pricing' | 'invoices' | 'server') => void;
   onOpenAddModal: () => void;
   sitesCount: number;
+  domainsCount: number;
   criticalCount: number;
   totalDiskGB: string;
 }
@@ -19,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab,
   onOpenAddModal,
   sitesCount,
+  domainsCount,
   criticalCount,
   totalDiskGB,
 }) => {
@@ -89,13 +91,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <div className="flex items-center gap-2.5">
               <Globe className="w-4 h-4 text-zinc-400" />
-              <span>Websites & Domains</span>
+              <span>Websites Fleet</span>
             </div>
             <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
               activeTab === 'websites' ? 'bg-zinc-700 text-white' : 'bg-zinc-900 text-zinc-500'
             }`}>
               {sitesCount}
             </span>
+          </button>
+
+          {/* Domains & Registrar Tab */}
+          <button
+            onClick={() => setActiveTab('domains')}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+              activeTab === 'domains'
+                ? 'bg-zinc-800/90 text-white shadow-sm'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900/60'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <AtSign className="w-4 h-4 text-zinc-400" />
+              <span>Domains & DNS</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-mono text-emerald-400 font-semibold bg-emerald-950/60 px-1 rounded border border-emerald-500/30">
+                .com R232
+              </span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
+                activeTab === 'domains' ? 'bg-zinc-700 text-white' : 'bg-zinc-900 text-zinc-500'
+              }`}>
+                {domainsCount}
+              </span>
+            </div>
           </button>
 
           {/* Pricing & Plan Tab */}
@@ -109,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <div className="flex items-center gap-2.5">
               <Zap className="w-4 h-4 text-amber-400" />
-              <span>Annual Plan</span>
+              <span>Annual Plans & Pricing</span>
             </div>
             <span className="text-[10px] font-mono text-amber-400 font-bold">R1,345</span>
           </button>
@@ -156,16 +183,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Configuration
           </div>
 
-          <div className="px-3 py-1.5 text-xs text-zinc-500 flex items-center gap-2.5 cursor-not-allowed">
-            <Layers className="w-4 h-4 text-zinc-600" />
-            <span>Anycast DNS Zones</span>
-            <span className="text-[9px] text-zinc-600 border border-zinc-800 rounded px-1 ml-auto">AUTO</span>
+          <div className="px-3 py-1.5 text-xs text-zinc-400 flex items-center justify-between bg-zinc-950/40 rounded-lg border border-zinc-900">
+            <span className="font-mono text-[11px] text-zinc-400">elijahchurch.org</span>
+            <span className="text-[10px] font-mono font-bold text-indigo-300">R356/yr</span>
           </div>
 
-          <div className="px-3 py-1.5 text-xs text-zinc-500 flex items-center gap-2.5 cursor-not-allowed">
-            <Terminal className="w-4 h-4 text-zinc-600" />
-            <span>Edge SSL / Let's Encrypt</span>
-            <span className="text-[9px] text-emerald-600 ml-auto">ACTIVE</span>
+          <div className="px-3 py-1.5 text-xs text-zinc-400 flex items-center justify-between bg-zinc-950/40 rounded-lg border border-zinc-900">
+            <span className="font-mono text-[11px] text-zinc-400">*.com Domain</span>
+            <span className="text-[10px] font-mono font-bold text-emerald-400">R232/yr</span>
           </div>
         </nav>
       </div>
@@ -181,7 +206,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="font-mono text-zinc-300 font-semibold">{totalDiskGB} / 600 GB</span>
           </div>
           <div className="w-full bg-zinc-800 rounded-full h-1 overflow-hidden">
-            <div className="h-full bg-indigo-500 rounded-full" style={{ width: '31%' }}></div>
+            <div className="h-full bg-white rounded-full" style={{ width: '31%' }}></div>
           </div>
         </div>
 

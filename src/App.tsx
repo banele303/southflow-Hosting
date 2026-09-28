@@ -3,26 +3,29 @@ import {
   Globe, Server, ShieldCheck, Zap, HardDrive, 
   Wifi, Search, Filter, LayoutGrid, List, Plus, 
   RefreshCw, CheckCircle2, AlertTriangle, Clock, 
-  ChevronRight, Command, Bell, ExternalLink, Menu, X 
+  ChevronRight, Command, Bell, ExternalLink, Menu, X, AtSign 
 } from 'lucide-react';
-import { HostedWebsite, Invoice } from './types/hosting';
-import { MOCK_WEBSITES, INITIAL_INVOICES } from './data/mockWebsites';
+import { HostedWebsite, Invoice, RegisteredDomain } from './types/hosting';
+import { MOCK_WEBSITES, INITIAL_INVOICES, MOCK_DOMAINS } from './data/mockWebsites';
 import { Sidebar } from './components/Sidebar';
 import { AlertBanner } from './components/AlertBanner';
 import { WebsiteCard } from './components/WebsiteCard';
 import { WebsitesTable } from './components/WebsitesTable';
 import { RenewalModal } from './components/RenewalModal';
+import { DomainRenewalModal } from './components/DomainRenewalModal';
 import { LivePreviewModal } from './components/LivePreviewModal';
 import { SiteDrawer } from './components/SiteDrawer';
 import { HostingPlansView } from './components/HostingPlansView';
 import { InvoicesView } from './components/InvoicesView';
+import { DomainsView } from './components/DomainsView';
 import { ServerHealthView } from './components/ServerHealthView';
 import { AddWebsiteModal } from './components/AddWebsiteModal';
 
 export const App: React.FC = () => {
   const [websites, setWebsites] = useState<HostedWebsite[]>(MOCK_WEBSITES);
+  const [domains, setDomains] = useState<RegisteredDomain[]>(MOCK_DOMAINS);
   const [invoices, setInvoices] = useState<Invoice[]>(INITIAL_INVOICES);
-  const [activeTab, setActiveTab] = useState<'websites' | 'pricing' | 'invoices' | 'server'>('websites');
+  const [activeTab, setActiveTab] = useState<'websites' | 'domains' | 'pricing' | 'invoices' | 'server'>('websites');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
@@ -33,6 +36,7 @@ export const App: React.FC = () => {
 
   // Modals & Drawers
   const [renewalSite, setRenewalSite] = useState<HostedWebsite | null>(null);
+  const [renewalDomain, setRenewalDomain] = useState<RegisteredDomain | null>(null);
   const [manageSite, setManageSite] = useState<HostedWebsite | null>(null);
   const [previewSite, setPreviewSite] = useState<HostedWebsite | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -49,8 +53,10 @@ export const App: React.FC = () => {
 
   // Count critical / urgent
   const urgentCount = useMemo(() => {
-    return websites.filter(w => w.status === 'grace_period' || w.status === 'pending_renewal').length;
-  }, [websites]);
+    const siteUrgent = websites.filter(w => w.status === 'grace_period' || w.status === 'pending_renewal').length;
+    const domUrgent = domains.filter(d => d.status === 'grace_period' || d.status === 'pending_renewal').length;
+    return siteUrgent + domUrgent;
+  }, [websites, domains]);
 
   // Aggregate stats
   const totalFleetCostZAR = websites.length * 1345;
@@ -77,7 +83,7 @@ export const App: React.FC = () => {
     });
   }, [websites, searchQuery, statusFilter, categoryFilter]);
 
-  // Handle successful renewal
+  // Handle successful website hosting renewal
   const handleConfirmRenewal = (siteId: string, years: number, totalPaidZAR: number) => {
     setWebsites(prev => prev.map(site => {
       if (site.id !== siteId) return site;
@@ -113,17 +119,91 @@ export const App: React.FC = () => {
     setRenewalSite(null);
   };
 
+  // Handle successful domain renewal (e.g. elijahchurch.org for R356, or .com for R232)
+  const handleConfirmDomainRenewal = (domainId: string, years: number, totalPaidZAR: number) => {
+    setDomains(prev => prev.map(dom => {
+      if (dom.id !== domainId) return dom;
+
+      const currentYear = 2026;
+      const newYear = currentYear + years;
+      const monthDay = dom.domain === 'elijahchurch.org' ? '10-01' : '09-28';
+      const newDate = `${newYear}-${monthDay}`;
+
+      return {
+        ...dom,
+        status: 'active',
+        renewalDate: newDate,
+        daysRemaining: 365 * years,
+      };
+    }));
+
+    // Update or mark domain invoice as Paid
+    setInvoices(prev => prev.map(inv => {
+      if (inv.domainName === 'elijahchurch.org' || inv.id.includes(domainId)) {
+        return {
+          ...inv,
+          status: 'Paid',
+          paymentMethod: 'Capitec Pay / Ozow',
+          receiptNumber: `REC-DOM-${Math.floor(100000 + Math.random() * 900000)}`,
+        };
+      }
+      return inv;
+    }));
+
+    const targetDom = domains.find(d => d.id === domainId);
+    showToast(`🌐 Domain ${targetDom?.domain} successfully renewed for ${years} year(s) (R${totalPaidZAR})!`);
+    setRenewalDomain(null);
+  };
+
+  // Handle registering a new domain
+  const handleRegisterDomain = (domainName: string, tld: string, priceZAR: number) => {
+    const newDomain: RegisteredDomain = {
+      id: `dom-${Date.now()}`,
+      domain: domainName,
+      tld,
+      category: 'New Registration',
+      annualPriceZAR: priceZAR,
+      status: 'active',
+      renewalDate: '2027-09-28',
+      daysRemaining: 365,
+      autoRenew: true,
+      dnssec: true,
+      whoisPrivacy: true,
+      nameservers: ['ns1.southflow.co.za', 'ns2.southflow.co.za'],
+    };
+
+    setDomains(prev => [newDomain, ...prev]);
+
+    const newInvoice: Invoice = {
+      id: `INV-DOM-${Date.now().toString().slice(-6)}`,
+      domainName,
+      type: 'domain',
+      amountZAR: priceZAR,
+      dateIssued: '2026-09-28',
+      dueDate: '2026-09-28',
+      status: 'Paid',
+      paymentMethod: 'Instant EFT (Ozow)',
+      description: `Annual ${tld} Domain Registration & Anycast DNSSEC (${domainName})`,
+      receiptNumber: `REC-DOM-${Math.floor(100000 + Math.random() * 900000)}`,
+    };
+    setInvoices(prev => [newInvoice, ...prev]);
+
+    showToast(`🌐 ${domainName} successfully registered at R${priceZAR}/year!`);
+  };
+
   const handleAddWebsite = (newSite: HostedWebsite) => {
     setWebsites(prev => [newSite, ...prev]);
     const newInvoice: Invoice = {
       id: `INV-${Date.now().toString().slice(-6)}`,
       websiteId: newSite.id,
       domainName: newSite.domain,
+      type: 'hosting',
       amountZAR: 1345,
       dateIssued: '2026-09-28',
       dueDate: '2026-09-28',
       status: 'Paid',
       paymentMethod: 'Instant EFT (Teraco)',
+      description: `Annual Cloud Web Hosting Renewal (R1,345/yr)`,
       receiptNumber: `REC-ZA-${Math.floor(100000 + Math.random() * 900000)}`,
     };
     setInvoices(prev => [newInvoice, ...prev]);
@@ -148,6 +228,7 @@ export const App: React.FC = () => {
           setActiveTab={setActiveTab}
           onOpenAddModal={() => setIsAddModalOpen(true)}
           sitesCount={websites.length}
+          domainsCount={domains.length}
           criticalCount={urgentCount}
           totalDiskGB={totalStorageGB}
         />
@@ -169,6 +250,7 @@ export const App: React.FC = () => {
                 setIsMobileSidebarOpen(false);
               }}
               sitesCount={websites.length}
+              domainsCount={domains.length}
               criticalCount={urgentCount}
               totalDiskGB={totalStorageGB}
             />
@@ -195,15 +277,20 @@ export const App: React.FC = () => {
               <span className="text-zinc-600">/</span>
               <span className="text-zinc-300 font-mono">za-production</span>
               <span className="text-zinc-600">/</span>
-              <span className="text-white capitalize">{activeTab}</span>
+              <span className="text-white capitalize font-mono text-[11px]">{activeTab}</span>
             </div>
           </div>
 
           {/* Right Header Badges */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="hidden sm:flex items-center gap-2 bg-[#0c0c0e] px-2.5 py-1 rounded-md border border-[#222227] text-[11px] font-mono text-zinc-400">
-              <span className="text-zinc-500">Plan:</span>
-              <span className="text-zinc-200 font-bold">R1,345/yr/site</span>
+              <span className="text-zinc-500">.com Domain:</span>
+              <span className="text-emerald-400 font-bold">R232/yr</span>
+            </div>
+
+            <div className="hidden md:flex items-center gap-2 bg-[#0c0c0e] px-2.5 py-1 rounded-md border border-[#222227] text-[11px] font-mono text-zinc-400">
+              <span className="text-zinc-500">Hosting:</span>
+              <span className="text-zinc-200 font-bold">R1,345/yr</span>
             </div>
 
             <button
@@ -238,7 +325,7 @@ export const App: React.FC = () => {
                     <span>HOSTED DOMAINS</span>
                     <Globe className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
-                  <div className="text-2xl font-bold text-white mt-1.5 tracking-tight">
+                  <div className="text-2xl font-bold text-white mt-1.5 tracking-tight font-mono">
                     {websites.length}
                   </div>
                   <div className="text-[11px] text-zinc-400 mt-1 font-mono">
@@ -248,27 +335,27 @@ export const App: React.FC = () => {
 
                 <div className="p-4 rounded-xl bg-[#0c0c0e] border border-[#1e1e24] hover:border-[#2e2e36] transition-colors">
                   <div className="flex items-center justify-between text-zinc-500 text-xs font-mono">
-                    <span>ANNUAL TOTAL</span>
+                    <span>ANNUAL FLEET</span>
                     <Zap className="w-3.5 h-3.5 text-amber-400" />
                   </div>
                   <div className="text-2xl font-bold text-white mt-1.5 tracking-tight font-mono">
                     R{totalFleetCostZAR.toLocaleString()}
                   </div>
-                  <div className="text-[11px] text-zinc-400 mt-1">
-                    {websites.length} active instances
+                  <div className="text-[11px] text-zinc-400 mt-1 font-mono">
+                    15 websites @ R1,345
                   </div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-[#0c0c0e] border border-[#1e1e24] hover:border-[#2e2e36] transition-colors">
                   <div className="flex items-center justify-between text-zinc-500 text-xs font-mono">
-                    <span>NVMe STORAGE</span>
-                    <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>DOMAINS PORTFOLIO</span>
+                    <AtSign className="w-3.5 h-3.5 text-emerald-400" />
                   </div>
                   <div className="text-2xl font-bold text-white mt-1.5 tracking-tight font-mono">
-                    {totalStorageGB} <span className="text-xs font-normal text-zinc-500">/ 600 GB</span>
+                    {domains.length} <span className="text-xs font-normal text-zinc-500">Domains</span>
                   </div>
-                  <div className="text-[11px] text-zinc-400 mt-1">
-                    Gen4 RAID 10 Cluster
+                  <div className="text-[11px] text-emerald-400 mt-1 font-mono">
+                    .com R232 • .org R356
                   </div>
                 </div>
 
@@ -323,7 +410,7 @@ export const App: React.FC = () => {
                       }`}
                     >
                       <AlertTriangle className="w-3 h-3" />
-                      <span>Action Required ({urgentCount})</span>
+                      <span>Action Required</span>
                     </button>
                     <button
                       onClick={() => setStatusFilter('active')}
@@ -333,7 +420,7 @@ export const App: React.FC = () => {
                           : 'text-zinc-400 hover:text-white'
                       }`}
                     >
-                      Active ({websites.length - urgentCount})
+                      Active ({websites.filter(w => w.status === 'active').length})
                     </button>
                   </div>
 
@@ -398,12 +485,21 @@ export const App: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: PRICING & PLAN */}
+          {/* TAB 2: DOMAINS & DNS (Features .com @ R232 & elijahchurch.org @ R356) */}
+          {activeTab === 'domains' && (
+            <DomainsView
+              domains={domains}
+              onRenewDomain={(dom) => setRenewalDomain(dom)}
+              onRegisterDomain={handleRegisterDomain}
+            />
+          )}
+
+          {/* TAB 3: PRICING & PLAN */}
           {activeTab === 'pricing' && (
             <HostingPlansView onHostNewSite={() => setIsAddModalOpen(true)} />
           )}
 
-          {/* TAB 3: INVOICES & BILLING (With instant PDF downloads) */}
+          {/* TAB 4: INVOICES & BILLING */}
           {activeTab === 'invoices' && (
             <InvoicesView
               invoices={invoices}
@@ -412,7 +508,7 @@ export const App: React.FC = () => {
             />
           )}
 
-          {/* TAB 4: SERVER HEALTH & TERACO DATACENTER */}
+          {/* TAB 5: SERVER HEALTH & TERACO DATACENTER */}
           {activeTab === 'server' && (
             <ServerHealthView />
           )}
@@ -425,6 +521,12 @@ export const App: React.FC = () => {
         site={renewalSite}
         onClose={() => setRenewalSite(null)}
         onConfirmRenewal={handleConfirmRenewal}
+      />
+
+      <DomainRenewalModal
+        domain={renewalDomain}
+        onClose={() => setRenewalDomain(null)}
+        onConfirmDomainRenewal={handleConfirmDomainRenewal}
       />
 
       <LivePreviewModal
