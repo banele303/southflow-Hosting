@@ -95,7 +95,7 @@ export const RenewalModal: React.FC<RenewalModalProps> = ({
             <div className="mt-4 p-3 rounded-xl bg-rose-950/90 border border-rose-500/60 text-xs text-rose-200 flex items-start gap-2.5">
               <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0 mt-0.5" />
               <div>
-                <strong className="text-rose-100 font-bold block">Notice: 4 Days Grace Period Remaining</strong>
+                <strong className="text-rose-100 font-bold block">Notice: 1 Day Remaining (Cutoff: 29 September)</strong>
                 Renewing today immediately restores full operational status, clears deactivation notices, and extends hosting until <strong className="text-white">27 September 2027</strong>.
               </div>
             </div>

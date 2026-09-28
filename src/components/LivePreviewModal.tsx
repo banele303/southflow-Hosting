@@ -104,7 +104,7 @@ export const LivePreviewModal: React.FC<LivePreviewModalProps> = ({
                 {/* Notice banner inside site if in grace period */}
                 {site.status === 'grace_period' && (
                   <div className="bg-rose-600 text-white px-4 py-2 text-xs font-semibold flex items-center justify-between">
-                    <span>⚠️ Hosting Renewal Alert: Site in 4-day grace period before deactivation.</span>
+                    <span>⚠️ Hosting Renewal Alert: Deactivation cutoff is 29 September (1 day remaining).</span>
                     <button 
                       onClick={() => onRenewFromPreview(site)}
                       className="bg-white text-rose-600 px-2.5 py-0.5 rounded font-bold text-[11px] hover:bg-rose-50"

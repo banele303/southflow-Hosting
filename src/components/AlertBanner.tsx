@@ -56,7 +56,7 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({
                     Expired: 27 September 2026
                   </span>
                   <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold text-amber-300 bg-amber-950/80 border border-amber-600/50 flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> ONLY 4 DAYS TO BE DEACTIVATED!
+                    <Clock className="w-3 h-3" /> ONLY 1 DAY LEFT (29 SEPT DEACTIVATION CUTOFF!)
                   </span>
                 </div>
                 <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 pt-0.5">
@@ -64,7 +64,7 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({
                   <span className="text-xs font-mono text-rose-300 font-normal">glenanda-hotel.co.za</span>
                 </h3>
                 <p className="text-xs text-zinc-300 max-w-2xl leading-relaxed">
-                  The yearly cloud hosting renewal (<strong className="text-white font-semibold">R1,345/yr</strong>) expired on <strong className="text-rose-200">27 September</strong>. The 5-day grace period is running out fast. If payment is not settled by <strong className="text-amber-300">1 October 2026 (4 days)</strong>, all hotel booking APIs and email routing will be permanently shut down.
+                  The yearly cloud hosting renewal (<strong className="text-white font-semibold">R1,345/yr</strong>) expired on <strong className="text-rose-200">27 September</strong>. Grace period cutoff has been reduced to tomorrow, <strong className="text-amber-300">29 September 2026 (only 1 day remaining)</strong>. If payment is not settled by 29 September, all hotel booking APIs and email routing will be permanently shut down.
                 </p>
               </div>
             </div>

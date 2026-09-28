@@ -105,7 +105,7 @@ export const MOCK_DOMAINS: RegisteredDomain[] = [
     annualPriceZAR: 99,
     status: 'grace_period',
     renewalDate: '2026-09-27',
-    daysRemaining: 4,
+    daysRemaining: 1,
     autoRenew: false,
     dnssec: true,
     whoisPrivacy: true,
@@ -169,8 +169,8 @@ export const MOCK_WEBSITES: HostedWebsite[] = [
     annualPriceZAR: 1345,
     status: 'grace_period',
     renewalDate: '2026-09-27',
-    deactivationDeadline: '2026-10-01', // 4 days remaining before deactivation
-    daysRemaining: 4,
+    deactivationDeadline: '2026-09-29', // Reduced to 29 September - ONLY 1 DAY LEFT
+    daysRemaining: 1,
     ipAddress: '102.130.114.42',
     serverLocation: 'Johannesburg (Teraco JB1)',
     phpVersion: '8.3 FPM',
@@ -178,7 +178,7 @@ export const MOCK_WEBSITES: HostedWebsite[] = [
     diskTotalGB: 40.0,
     bandwidthUsedGB: 142.8,
     sslActive: true,
-    sslExpiry: '2026-10-01',
+    sslExpiry: '2026-09-29',
     autoRenew: false,
     emailAccounts: 12,
     dbCount: 2,
@@ -670,7 +670,7 @@ export const INITIAL_INVOICES: Invoice[] = [
     dateIssued: '2026-09-13',
     dueDate: '2026-09-27',
     status: 'Overdue',
-    description: 'Annual Cloud Web Hosting (R1,345/yr) - 4 Days Remaining in Grace Period',
+    description: 'Annual Cloud Web Hosting (R1,345/yr) - Deactivation Deadline: 29 September (1 Day Remaining)',
     receiptNumber: 'REC-PENDING'
   },
   {

@@ -90,7 +90,7 @@ export const WebsitesTable: React.FC<WebsitesTableProps> = ({
                   {isGrace ? (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/50 flex items-center gap-1 w-fit animate-pulse">
                       <AlertCircle className="w-3 h-3 text-rose-400" />
-                      Grace: 4d Left
+                      Grace: 1d Left (29 Sep)
                     </span>
                   ) : isPending ? (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/50 flex items-center gap-1 w-fit">

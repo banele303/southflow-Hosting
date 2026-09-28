@@ -41,7 +41,7 @@ export const WebsiteCard: React.FC<WebsiteCardProps> = ({
         <div className="bg-rose-600 px-3.5 py-1.5 flex items-center justify-between text-xs font-bold text-white tracking-wide">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
-            <span>ONLY 4 DAYS TO BE DEACTIVATED!</span>
+            <span>ONLY 1 DAY TO BE DEACTIVATED! (29 SEPT)</span>
           </div>
           <span className="text-[10px] font-mono bg-rose-800 px-1.5 py-0.5 rounded">
             Expired 27 Sept
@@ -150,7 +150,7 @@ export const WebsiteCard: React.FC<WebsiteCardProps> = ({
           {isGrace && (
             <div className="text-[10.5px] font-medium text-rose-300 bg-rose-950/80 p-2 rounded border border-rose-800/60 flex items-center gap-2">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 text-rose-400" />
-              <span>Deactivation: <strong>1 Oct 2026 (4 days left)</strong></span>
+              <span>Deactivation: <strong>29 Sept 2026 (1 day left)</strong></span>
             </div>
           )}
 

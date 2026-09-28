@@ -140,10 +140,10 @@ export const SiteDrawer: React.FC<SiteDrawerProps> = ({
                   <div className="p-4 rounded-2xl bg-rose-950/70 border border-rose-500/50 text-rose-200 space-y-2">
                     <div className="flex items-center gap-2 font-bold text-rose-300">
                       <AlertTriangle className="w-4 h-4 text-rose-400" />
-                      <span>CRITICAL: 4 DAYS TO DEACTIVATION</span>
+                      <span>CRITICAL: 1 DAY TO DEACTIVATION (29 SEPT 2026)</span>
                     </div>
                     <p className="text-[11px] leading-relaxed text-rose-200/90">
-                      Hosting expired on 27 Sept 2026. Settle the R1,345 yearly fee immediately to prevent automated service termination.
+                      Hosting expired on 27 Sept 2026. Grace cutoff is 29 September (tomorrow). Settle the R1,345 yearly fee immediately to prevent automated service termination.
                     </p>
                     <button
                       onClick={() => onRenew(site)}
