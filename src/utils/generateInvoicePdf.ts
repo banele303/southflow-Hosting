@@ -134,58 +134,80 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
 
     // --- DRAW VECTOR PDF LAYOUT ---
 
-    // Top Brand Accent Line
+    // Top Brand Accent Bar
     doc.setFillColor(17, 24, 39);
-    doc.rect(0, 0, pageWidth, 6, 'F');
+    doc.rect(0, 0, pageWidth, 5, 'F');
 
-    // Company Header (Left)
+    // Vector Geometric Triangle Logo (No unicode corruption)
+    doc.setFillColor(17, 24, 39);
+    doc.triangle(margin + 7, 32, margin, 48, margin + 14, 48, 'F');
+
+    // Company Brand Name & Subtitle
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
-    doc.setTextColor(0, 0, 0);
-    doc.text('▲ SOUTHFLOW HOSTING ZA (PTY) LTD', margin, 46);
+    doc.setFontSize(14);
+    doc.setTextColor(17, 24, 39);
+    doc.text('SOUTHFLOW HOSTING ZA', margin + 22, 42);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
+    doc.setFontSize(7.5);
+    doc.setTextColor(107, 114, 128);
+    doc.text('CLOUD INFRASTRUCTURE & DOMAIN REGISTRY (PTY) LTD', margin + 22, 52);
+
+    // Company Registered Details
+    doc.setFontSize(8);
     doc.setTextColor(75, 85, 99);
-    doc.text('Teraco Data Environments JB1, 5 Great North Rd, Isando, Johannesburg', margin, 60);
-    doc.text('VAT Reg No: 4920281944  •  Company Reg: 2018/491022/07', margin, 72);
-    doc.text('Email: billing@southflow.co.za  •  Web: https://southflow.co.za', margin, 84);
+    doc.text('Teraco Data Environments JB1, Isando, Johannesburg, South Africa', margin, 68);
+    doc.text('SARS VAT Reg: 4920281944   |   Company Reg: 2018/491022/07', margin, 80);
+    doc.text('Direct Support: billing@southflow.co.za   |   https://southflow.co.za', margin, 92);
 
     // Tax Invoice Title & ID (Right)
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
+    doc.setFontSize(20);
     doc.setTextColor(17, 24, 39);
-    doc.text('TAX INVOICE', rightAlignX, 46, { align: 'right' });
+    doc.text('TAX INVOICE', rightAlignX, 41, { align: 'right' });
 
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(10.5);
     doc.setTextColor(79, 70, 229);
-    doc.text(invoice.id, rightAlignX, 61, { align: 'right' });
+    doc.text(invoice.id, rightAlignX, 55, { align: 'right' });
 
     // Status Pill Badge (Right)
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    const badgeText = `STATUS: ${statusText}`;
-    const badgeWidth = doc.getTextWidth(badgeText) + 14;
-    const badgeHeight = 16;
+    const badgeText = isOverdue
+      ? 'STATUS: OVERDUE (1 DAY GRACE LEFT)'
+      : isPaid
+      ? 'STATUS: PAID IN FULL'
+      : 'STATUS: PAYMENT DUE (1 OCT 2026)';
+    const badgeWidth = doc.getTextWidth(badgeText) + 16;
+    const badgeHeight = 17;
     const badgeX = rightAlignX - badgeWidth;
-    const badgeY = 69;
+    const badgeY = 66;
 
     doc.setFillColor(
       isPaid ? 236 : isOverdue ? 254 : 254,
       isPaid ? 253 : isOverdue ? 242 : 243,
       isPaid ? 245 : isOverdue ? 242 : 199
     );
-    doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 3, 3, 'F');
+    doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 3.5, 3.5, 'F');
+    doc.setDrawColor(
+      isPaid ? 16 : isOverdue ? 244 : 245,
+      isPaid ? 185 : isOverdue ? 63 : 158,
+      isPaid ? 129 : isOverdue ? 94 : 11
+    );
+    doc.setLineWidth(0.8);
+    doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 3.5, 3.5, 'S');
+
     doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
-    doc.text(badgeText, badgeX + 7, badgeY + 11.5);
+    doc.text(badgeText, badgeX + 8, badgeY + 11.5);
 
     // Horizontal Divider
     doc.setDrawColor(229, 231, 235);
     doc.setLineWidth(1);
-    doc.line(margin, 98, rightAlignX, 98);
+    doc.line(margin, 104, rightAlignX, 104);
 
     // Meta Box (Billed To & Billing Info)
-    const metaBoxY = 108;
+    const metaBoxY = 114;
     const metaBoxHeight = 84;
     doc.setFillColor(249, 250, 251);
     doc.roundedRect(margin, metaBoxY, contentWidth, metaBoxHeight, 4, 4, 'F');
@@ -367,7 +389,7 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(55, 65, 81);
-    doc.text('Bank: First National Bank (FNB)  •  Branch: 250655', margin + 12, bankBoxY + 28);
+    doc.text('Bank: First National Bank (FNB)   |   Branch: 250655', margin + 12, bankBoxY + 28);
     doc.text('Account Holder: SouthFlow Hosting ZA (Pty) Ltd', margin + 12, bankBoxY + 40);
     doc.text('Account Number: 62890124810  (Cheque / Current)', margin + 12, bankBoxY + 52);
     doc.setFont('helvetica', 'bold');
@@ -385,7 +407,7 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
       { align: 'center' }
     );
     doc.text(
-      '© 2026 SouthFlow Hosting ZA (Pty) Ltd. All rights reserved. • Teraco JB1 Isando Cluster',
+      '(C) 2026 SouthFlow Hosting ZA (Pty) Ltd. All rights reserved.   |   Teraco JB1 Isando Datacenter Cluster',
       pageWidth / 2,
       footerY + 12,
       { align: 'center' }
