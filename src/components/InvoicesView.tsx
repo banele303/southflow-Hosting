@@ -445,10 +445,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               <div className="pt-4 border-t flex items-center justify-between">
                 <button
                   onClick={() => handleDownloadInvoice(selectedInvoice)}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-black hover:bg-zinc-800 text-white text-xs font-semibold shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-black hover:bg-zinc-800 text-white text-xs font-semibold shadow-sm transition-all"
                 >
-                  <ArrowDownToLine className="w-4 h-4" />
-                  <span>Download / Print PDF</span>
+                  <ArrowDownToLine className="w-4 h-4 text-emerald-400" />
+                  <span>Download Tax Invoice (PDF)</span>
                 </button>
 
                 <button

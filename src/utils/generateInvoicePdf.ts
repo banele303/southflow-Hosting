@@ -1,17 +1,23 @@
+import { jsPDF } from 'jspdf';
 import { Invoice, HostedWebsite } from '../types/hosting';
 
 export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWebsite) {
   try {
-    const printWindow = window.open('', '_blank', 'width=850,height=1000');
-    if (!printWindow) {
-      alert('Please allow popups to download/print the invoice.');
-      return;
-    }
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: 'a4',
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth(); // 595.28 pt
+    const margin = 40;
+    const contentWidth = pageWidth - margin * 2; // 515.28 pt
+    const rightAlignX = margin + contentWidth;
 
     const isPaid = invoice.status === 'Paid';
     const isOverdue = invoice.status === 'Overdue';
-    const statusColor = isPaid ? '#10b981' : isOverdue ? '#ef4444' : '#f59e0b';
-    const statusBg = isPaid ? '#ecfdf5' : isOverdue ? '#fef2f2' : '#fffbeb';
+    const statusText = invoice.status.toUpperCase();
+    const statusColor = isPaid ? [16, 185, 129] : isOverdue ? [225, 29, 72] : [217, 119, 6];
 
     // Detect if this is a domain-only invoice or hosting/bundle invoice
     const isDomainOnly = invoice.type === 'domain' || invoice.id.startsWith('INV-DOM-');
@@ -64,7 +70,7 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
         });
       }
     } else {
-      // Hosting + Domain bundle invoice
+      // Hosting line item
       lineItems.push({
         title: `Annual Cloud Web Hosting Pro (${site ? site.name : invoice.domainName})`,
         desc: '40GB NVMe Gen4 Storage (RAID 10), LiteSpeed Enterprise, Uncapped 10Gbps NAPAfrica Bandwidth, Unlimited IMAP/POP3 Mailboxes, TLS 1.3 SSL, Daily Offsite Backups',
@@ -112,316 +118,272 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
       }
     }
 
-    // Dynamic totals matching itemized rows
     const totalAmount = lineItems.reduce((acc, item) => acc + item.total, 0);
     const subtotal = totalAmount / 1.15;
     const vat = totalAmount - subtotal;
-    const isDomain = isDomainOnly;
 
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <title>Tax Invoice - ${invoice.id} - SouthFlow Hosting</title>
-        <style>
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: #111827; 
-            background: #ffffff; 
-            padding: 40px; 
-            font-size: 13px;
-            line-height: 1.5;
-          }
-          .invoice-container {
-            max-width: 780px;
-            margin: 0 auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 40px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-          }
-          .header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 2px solid #111827;
-            padding-bottom: 24px;
-            margin-bottom: 28px;
-          }
-          .brand-logo {
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: -0.5px;
-            color: #000000;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-          .brand-logo span.triangle {
-            color: #000;
-            font-size: 18px;
-          }
-          .company-details {
-            font-size: 11px;
-            color: #4b5563;
-            margin-top: 6px;
-            line-height: 1.4;
-          }
-          .invoice-badge-box {
-            text-align: right;
-          }
-          .tax-title {
-            font-size: 22px;
-            font-weight: 900;
-            color: #111827;
-            letter-spacing: 1px;
-          }
-          .inv-number {
-            font-family: monospace;
-            font-size: 14px;
-            font-weight: 700;
-            color: #374151;
-            margin: 4px 0;
-          }
-          .status-tag {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background-color: ${statusBg};
-            color: ${statusColor};
-            border: 1px solid ${statusColor}40;
-          }
-          .meta-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 28px;
-            background: #f9fafb;
-            padding: 18px;
-            border-radius: 8px;
-            border: 1px solid #f3f4f6;
-          }
-          .meta-col h4 {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: #6b7280;
-            margin-bottom: 6px;
-          }
-          .meta-col p {
-            font-size: 12px;
-            color: #1f2937;
-          }
-          .meta-col p strong {
-            color: #000000;
-            font-size: 14px;
-          }
-          .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 24px;
-          }
-          .table th {
-            background: #111827;
-            color: #ffffff;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            padding: 10px 14px;
-            text-align: left;
-          }
-          .table th:last-child { text-align: right; }
-          .table td {
-            padding: 14px;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 12px;
-            color: #374151;
-          }
-          .table td:last-child { text-align: right; font-weight: 600; }
-          .totals-wrap {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 30px;
-          }
-          .totals-table {
-            width: 320px;
-          }
-          .totals-table tr td {
-            padding: 6px 0;
-            font-size: 12px;
-            color: #4b5563;
-          }
-          .totals-table tr.total-row td {
-            border-top: 2px solid #111827;
-            padding-top: 10px;
-            font-size: 16px;
-            font-weight: 900;
-            color: #000000;
-          }
-          .banking-box {
-            border-top: 1px dashed #d1d5db;
-            padding-top: 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            font-size: 11px;
-            color: #4b5563;
-          }
-          .banking-box h5 {
-            font-size: 11px;
-            font-weight: 800;
-            color: #111827;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-          }
-          .notice-footer {
-            margin-top: 24px;
-            text-align: center;
-            font-size: 10px;
-            color: #9ca3af;
-            border-top: 1px solid #f3f4f6;
-            padding-top: 14px;
-          }
-          @media print {
-            body { padding: 0; background: #fff; }
-            .invoice-container { border: none; box-shadow: none; padding: 20px; }
-            .no-print { display: none; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="no-print" style="max-width: 780px; margin: 0 auto 16px auto; display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 12px; color: #6b7280;">Previewing SARS-Compliant Official Tax Invoice</span>
-          <button onclick="window.print()" style="background: #000; color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer;">
-            🖨️ Print / Save as PDF
-          </button>
-        </div>
+    // --- DRAW VECTOR PDF LAYOUT ---
 
-        <div class="invoice-container">
-          <div class="header-row">
-            <div>
-              <div class="brand-logo"><span class="triangle">▲</span> SOUTHFLOW HOSTING ZA</div>
-              <div class="company-details">
-                <strong>SouthFlow Cloud (Pty) Ltd</strong><br>
-                Teraco Data Environments JB1, Isando, Johannesburg, 1600<br>
-                VAT Registration No: <strong>4920281944</strong> | Reg: 2018/491022/07<br>
-                Support: billing@southflow.co.za • Tel: +27 (0)11 555 0199
-              </div>
-            </div>
-            <div class="invoice-badge-box">
-              <div class="tax-title">TAX INVOICE</div>
-              <div class="inv-number">${invoice.id}</div>
-              <div class="status-tag">${invoice.status}</div>
-            </div>
-          </div>
+    // Top Brand Accent Line
+    doc.setFillColor(17, 24, 39);
+    doc.rect(0, 0, pageWidth, 6, 'F');
 
-          <div class="meta-grid">
-            <div class="meta-col">
-              <h4>Billed To (Client / Domain):</h4>
-              <p><strong>${site ? site.name : (invoice.domainName === 'elijahchurch.org' ? 'Elijah Church International' : invoice.domainName)}</strong></p>
-              <p>Domain: <span style="font-family: monospace; font-weight: 600;">${invoice.domainName}</span></p>
-              <p>Invoice Type: <strong style="text-transform: uppercase;">${isDomain ? 'Domain Registration & DNS' : 'Cloud Web Hosting'}</strong></p>
-              <p>Registry / Datacenter: ${isDomain ? 'ICANN / ZACR Authoritative Anycast' : (site ? site.serverLocation : 'Teraco JB1, Johannesburg')}</p>
-            </div>
-            <div class="meta-col" style="text-align: right;">
-              <h4>Billing Details:</h4>
-              <p>Date Issued: <strong>${invoice.dateIssued}</strong></p>
-              <p>Payment Due: <strong>${invoice.dueDate}</strong></p>
-              <p>Payment Method: ${invoice.paymentMethod || 'Instant EFT / Ozow / Card'}</p>
-              ${invoice.receiptNumber ? `<p>Receipt Reference: <span style="font-family: monospace; font-weight: bold; color: #059669;">${invoice.receiptNumber}</span></p>` : ''}
-            </div>
-          </div>
+    // Company Header (Left)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(0, 0, 0);
+    doc.text('▲ SOUTHFLOW HOSTING ZA (PTY) LTD', margin, 46);
 
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Description</th>
-                <th style="text-align: center;">Period</th>
-                <th style="text-align: right;">Unit Price (ZAR)</th>
-                <th>Total (ZAR)</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${lineItems.map(item => `
-              <tr>
-                <td>
-                  <strong style="color: #111827;">${item.title}</strong><br>
-                  <span style="font-size: 11px; color: #6b7280;">
-                    ${item.desc}
-                  </span>
-                </td>
-                <td style="text-align: center;">${item.period}</td>
-                <td style="text-align: right; font-family: monospace;">R${item.unitPrice.toLocaleString()}.00</td>
-                <td style="text-align: right; font-family: monospace; font-weight: 600;">R${item.total.toLocaleString()}.00</td>
-              </tr>
-              `).join('')}
-            </tbody>
-          </table>
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(75, 85, 99);
+    doc.text('Teraco Data Environments JB1, 5 Great North Rd, Isando, Johannesburg', margin, 60);
+    doc.text('VAT Reg No: 4920281944  •  Company Reg: 2018/491022/07', margin, 72);
+    doc.text('Email: billing@southflow.co.za  •  Web: https://southflow.co.za', margin, 84);
 
-          <div class="totals-wrap">
-            <table class="totals-table">
-              <tr>
-                <td>Subtotal (Excl. VAT):</td>
-                <td style="text-align: right; font-family: monospace;">R${subtotal.toFixed(2)}</td>
-              </tr>
-              <tr>
-                <td>VAT (15% South African Standard Rate):</td>
-                <td style="text-align: right; font-family: monospace;">R${vat.toFixed(2)}</td>
-              </tr>
-              <tr class="total-row">
-                <td>Total Due (ZAR):</td>
-                <td style="text-align: right; font-family: monospace; color: #000;">R${totalAmount.toLocaleString()}.00</td>
-              </tr>
-            </table>
-          </div>
+    // Tax Invoice Title & ID (Right)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(17, 24, 39);
+    doc.text('TAX INVOICE', rightAlignX, 46, { align: 'right' });
 
-          <div class="banking-box">
-            <div>
-              <h5>EFT Banking Details (South Africa)</h5>
-              <p>Bank: <strong>First National Bank (FNB)</strong></p>
-              <p>Account Holder: <strong>SouthFlow Hosting ZA (Pty) Ltd</strong></p>
-              <p>Account Number: <span style="font-family: monospace; font-weight: bold;">62890124810</span></p>
-              <p>Branch Code: <span style="font-family: monospace;">250655</span> (Universal)</p>
-              <p>Reference: <strong style="font-family: monospace;">${invoice.id}</strong></p>
-            </div>
-            <div>
-              <h5>Instant Digital Settlements</h5>
-              <p>Pay online instantaneously via Ozow Instant EFT, Capitec Pay, Visa or Mastercard to avoid service disruption.</p>
-              <p style="margin-top: 6px; color: #059669; font-weight: 600;">
-                ✓ 24/7 Automated Reconciliation & Immediate Service Unlocking
-              </p>
-            </div>
-          </div>
+    doc.setFontSize(10.5);
+    doc.setTextColor(79, 70, 229);
+    doc.text(invoice.id, rightAlignX, 61, { align: 'right' });
 
-          <div class="notice-footer">
-            This is an official computer-generated Tax Invoice issued in compliance with the South African Value-Added Tax Act 89 of 1991.
-            <br>© 2026 SouthFlow Hosting ZA (Pty) Ltd. All rights reserved.
-          </div>
-        </div>
+    // Status Pill Badge (Right)
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'bold');
+    const badgeText = `STATUS: ${statusText}`;
+    const badgeWidth = doc.getTextWidth(badgeText) + 14;
+    const badgeHeight = 16;
+    const badgeX = rightAlignX - badgeWidth;
+    const badgeY = 69;
 
-        <script>
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-            }, 400);
-          };
-        </script>
-      </body>
-      </html>
-    `;
+    doc.setFillColor(
+      isPaid ? 236 : isOverdue ? 254 : 254,
+      isPaid ? 253 : isOverdue ? 242 : 243,
+      isPaid ? 245 : isOverdue ? 242 : 199
+    );
+    doc.roundedRect(badgeX, badgeY, badgeWidth, badgeHeight, 3, 3, 'F');
+    doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
+    doc.text(badgeText, badgeX + 7, badgeY + 11.5);
 
-    printWindow.document.open();
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
+    // Horizontal Divider
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(1);
+    doc.line(margin, 98, rightAlignX, 98);
+
+    // Meta Box (Billed To & Billing Info)
+    const metaBoxY = 108;
+    const metaBoxHeight = 84;
+    doc.setFillColor(249, 250, 251);
+    doc.roundedRect(margin, metaBoxY, contentWidth, metaBoxHeight, 4, 4, 'F');
+    doc.setDrawColor(243, 244, 246);
+    doc.roundedRect(margin, metaBoxY, contentWidth, metaBoxHeight, 4, 4, 'S');
+
+    // Left Column: Client / Domain Info
+    const clientName = site ? site.name : (invoice.domainName === 'elijahchurch.org' ? 'Elijah Church International' : invoice.domainName);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text('BILLED TO (CLIENT / DOMAIN):', margin + 14, metaBoxY + 18);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(17, 24, 39);
+    doc.text(clientName, margin + 14, metaBoxY + 33);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(75, 85, 99);
+    doc.text(`Domain: ${invoice.domainName}`, margin + 14, metaBoxY + 46);
+    doc.text(`Invoice Type: ${isDomainOnly ? 'Domain Name Registration & DNSSEC' : 'Cloud Web Hosting Pro + Domain Registry'}`, margin + 14, metaBoxY + 59);
+    doc.text(`Registry / DC: ${isDomainOnly ? 'ICANN / ZACR Authoritative Anycast' : (site ? site.serverLocation : 'Teraco JB1, Johannesburg')}`, margin + 14, metaBoxY + 72);
+
+    // Right Column: Billing Dates & Receipts
+    const col2X = margin + contentWidth / 2 + 10;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text('BILLING DETAILS:', col2X, metaBoxY + 18);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(75, 85, 99);
+    doc.text('Date Issued:', col2X, metaBoxY + 33);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(17, 24, 39);
+    doc.text(invoice.dateIssued, col2X + 68, metaBoxY + 33);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(75, 85, 99);
+    doc.text('Payment Due:', col2X, metaBoxY + 46);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(isOverdue ? 225 : 17, isOverdue ? 29 : 24, isOverdue ? 72 : 39);
+    doc.text(invoice.dueDate, col2X + 68, metaBoxY + 46);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(75, 85, 99);
+    doc.text('Payment Method:', col2X, metaBoxY + 59);
+    doc.text(invoice.paymentMethod || 'Instant EFT / Ozow / Card', col2X + 80, metaBoxY + 59);
+
+    if (invoice.receiptNumber) {
+      doc.text('Receipt Ref:', col2X, metaBoxY + 72);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(5, 150, 105);
+      doc.text(invoice.receiptNumber, col2X + 68, metaBoxY + 72);
+    }
+
+    // Line Items Table Header
+    const tableHeaderY = metaBoxY + metaBoxHeight + 16;
+    const tableHeaderHeight = 22;
+    doc.setFillColor(17, 24, 39);
+    doc.rect(margin, tableHeaderY, contentWidth, tableHeaderHeight, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text('DESCRIPTION', margin + 12, tableHeaderY + 14.5);
+    doc.text('PERIOD', margin + 285, tableHeaderY + 14.5, { align: 'center' });
+    doc.text('UNIT PRICE (ZAR)', margin + 395, tableHeaderY + 14.5, { align: 'right' });
+    doc.text('TOTAL (ZAR)', rightAlignX - 12, tableHeaderY + 14.5, { align: 'right' });
+
+    // Line Items Rows
+    let currentY = tableHeaderY + tableHeaderHeight;
+
+    lineItems.forEach((item, index) => {
+      const rowStartY = currentY;
+      const descLines = doc.splitTextToSize(item.desc, 250);
+      const rowHeight = Math.max(38, 22 + descLines.length * 11);
+
+      // Alternating row background
+      if (index % 2 === 1) {
+        doc.setFillColor(250, 250, 250);
+        doc.rect(margin, rowStartY, contentWidth, rowHeight, 'F');
+      }
+
+      // Title & Description
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(17, 24, 39);
+      doc.text(item.title, margin + 12, rowStartY + 14);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(107, 114, 128);
+      doc.text(descLines, margin + 12, rowStartY + 26);
+
+      // Period
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(55, 65, 81);
+      doc.text(item.period, margin + 285, rowStartY + 18, { align: 'center' });
+
+      // Unit Price
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(55, 65, 81);
+      doc.text(`R${item.unitPrice.toLocaleString()}.00`, margin + 395, rowStartY + 18, { align: 'right' });
+
+      // Total
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(17, 24, 39);
+      doc.text(`R${item.total.toLocaleString()}.00`, rightAlignX - 12, rowStartY + 18, { align: 'right' });
+
+      // Row separator line
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(0.5);
+      doc.line(margin, rowStartY + rowHeight, rightAlignX, rowStartY + rowHeight);
+
+      currentY += rowHeight;
+    });
+
+    // Totals Box (Right Side)
+    const totalsY = currentY + 14;
+    const totalsWidth = 220;
+    const totalsX = rightAlignX - totalsWidth;
+
+    doc.setFillColor(249, 250, 251);
+    doc.roundedRect(totalsX, totalsY, totalsWidth, 68, 4, 4, 'F');
+    doc.setDrawColor(229, 231, 235);
+    doc.roundedRect(totalsX, totalsY, totalsWidth, 68, 4, 4, 'S');
+
+    // Subtotal
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(75, 85, 99);
+    doc.text('Subtotal (Excl. VAT):', totalsX + 12, totalsY + 18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(17, 24, 39);
+    doc.text(`R${subtotal.toFixed(2)}`, rightAlignX - 12, totalsY + 18, { align: 'right' });
+
+    // VAT 15%
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(75, 85, 99);
+    doc.text('VAT (15% Standard Rate):', totalsX + 12, totalsY + 34);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(17, 24, 39);
+    doc.text(`R${vat.toFixed(2)}`, rightAlignX - 12, totalsY + 34, { align: 'right' });
+
+    // Divider in Totals Box
+    doc.setDrawColor(209, 213, 219);
+    doc.line(totalsX + 10, totalsY + 42, rightAlignX - 10, totalsY + 42);
+
+    // Total Due
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Total Due (ZAR):', totalsX + 12, totalsY + 58);
+    doc.setFontSize(11);
+    doc.setTextColor(79, 70, 229);
+    doc.text(`R${totalAmount.toLocaleString()}.00`, rightAlignX - 12, totalsY + 58, { align: 'right' });
+
+    // Banking Details Box (Left Side)
+    const bankBoxY = totalsY;
+    const bankBoxWidth = contentWidth - totalsWidth - 14;
+
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(margin, bankBoxY, bankBoxWidth, 68, 4, 4, 'F');
+    doc.setDrawColor(229, 231, 235);
+    doc.roundedRect(margin, bankBoxY, bankBoxWidth, 68, 4, 4, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(107, 114, 128);
+    doc.text('EFT BANKING DETAILS (SOUTH AFRICA):', margin + 12, bankBoxY + 15);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(55, 65, 81);
+    doc.text('Bank: First National Bank (FNB)  •  Branch: 250655', margin + 12, bankBoxY + 28);
+    doc.text('Account Holder: SouthFlow Hosting ZA (Pty) Ltd', margin + 12, bankBoxY + 40);
+    doc.text('Account Number: 62890124810  (Cheque / Current)', margin + 12, bankBoxY + 52);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Payment Reference: ${invoice.id}`, margin + 12, bankBoxY + 63);
+
+    // Compliance Notice & Footer
+    const footerY = totalsY + 84;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(156, 163, 175);
+    doc.text(
+      'This is an official computer-generated Tax Invoice issued in compliance with the South African Value-Added Tax Act 89 of 1991.',
+      pageWidth / 2,
+      footerY,
+      { align: 'center' }
+    );
+    doc.text(
+      '© 2026 SouthFlow Hosting ZA (Pty) Ltd. All rights reserved. • Teraco JB1 Isando Cluster',
+      pageWidth / 2,
+      footerY + 12,
+      { align: 'center' }
+    );
+
+    // DIRECT FILE DOWNLOAD VIA JSPDF (No Print Dialog!)
+    doc.save(`SouthFlow-Tax-Invoice-${invoice.id}.pdf`);
   } catch (err) {
-    console.error('Invoice print error:', err);
+    console.error('Invoice PDF direct download error:', err);
   }
 }
