@@ -130,6 +130,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               const isDomain = inv.type === 'domain' || inv.domainName === 'elijahchurch.org' || inv.amountZAR === 356 || inv.amountZAR === 232;
               const isElijahOrg = inv.domainName === 'elijahchurch.org' || inv.amountZAR === 356;
               const isCom = inv.domainName.endsWith('.com') || inv.amountZAR === 232;
+              const isGlenanda = inv.domainName === 'glenanda-hotel.co.za' || inv.websiteId === 'site-glenanda';
               const site = getWebsite(inv.websiteId);
 
               return (
@@ -157,6 +158,11 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                       {isCom && (
                         <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-zinc-800 text-emerald-400 border border-zinc-700">
                           .COM R232
+                        </span>
+                      )}
+                      {isGlenanda && (
+                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-rose-950/60 text-rose-300 border border-rose-700/50">
+                          GLENANDA .CO.ZA R183
                         </span>
                       )}
                     </span>
@@ -284,6 +290,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
               unitPrice: 232,
               total: 232,
             });
+          } else if (selectedInvoice.domainName === 'glenanda-hotel.co.za' || selectedInvoice.amountZAR === 183) {
+            modalLineItems.push({
+              title: 'Annual .co.za Domain Registration & DNSSEC (glenanda-hotel.co.za)',
+              desc: 'South African ZACR National Registry Renewal & Authoritative Anycast DNSSEC Protection',
+              period: '1 Year',
+              unitPrice: 183,
+              total: 183,
+            });
           } else {
             modalLineItems.push({
               title: `Annual .co.za Domain Name Registration (${selectedInvoice.domainName})`,
@@ -332,12 +346,14 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
             });
           } else {
             const dom = site ? site.domain : selectedInvoice.domainName;
+            const isGlenandaModal = dom === 'glenanda-hotel.co.za' || selectedInvoice.websiteId === 'site-glenanda' || (site && site.id === 'site-glenanda');
+            const cozaPrice = isGlenandaModal ? 183 : 99;
             modalLineItems.push({
               title: `Annual .co.za Domain Registration & DNSSEC (${dom})`,
               desc: 'South African ZACR National Registry Renewal & Authoritative Anycast DNSSEC Protection',
               period: '1 Year',
-              unitPrice: 99,
-              total: 99,
+              unitPrice: cozaPrice,
+              total: cozaPrice,
             });
           }
         }

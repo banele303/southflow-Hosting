@@ -102,7 +102,7 @@ export const MOCK_DOMAINS: RegisteredDomain[] = [
     domain: 'glenanda-hotel.co.za',
     tld: '.co.za',
     category: 'Hospitality & Hotels',
-    annualPriceZAR: 99,
+    annualPriceZAR: 183,
     status: 'grace_period',
     renewalDate: '2026-09-27',
     daysRemaining: 1,
@@ -666,11 +666,11 @@ export const INITIAL_INVOICES: Invoice[] = [
     websiteId: 'site-glenanda',
     domainName: 'glenanda-hotel.co.za',
     type: 'bundle',
-    amountZAR: 1444, // Hosting R1,345 + .co.za Domain R99
+    amountZAR: 1528, // Hosting R1,345 + .co.za Domain R183
     dateIssued: '2026-09-13',
     dueDate: '2026-09-27',
     status: 'Overdue',
-    description: 'Annual Cloud Web Hosting (R1,345) + .co.za Domain Registry (R99) — Deactivation Deadline: 29 September (1 Day Grace Left)',
+    description: 'Annual Cloud Web Hosting (R1,345) + .co.za Domain Registry (R183) — Deactivation Deadline: 29 September (1 Day Grace Left)',
     receiptNumber: 'REC-PENDING'
   },
   {

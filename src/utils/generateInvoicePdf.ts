@@ -52,6 +52,14 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
           unitPrice: 232,
           total: 232,
         });
+      } else if (invoice.domainName === 'glenanda-hotel.co.za' || invoice.amountZAR === 183) {
+        lineItems.push({
+          title: `Annual .co.za Domain Registration & DNSSEC (glenanda-hotel.co.za)`,
+          desc: 'South African ZACR National Registry Renewal & Authoritative Anycast DNSSEC Protection',
+          period: '1 Year',
+          unitPrice: 183,
+          total: 183,
+        });
       } else if (invoice.domainName.endsWith('.co.za') || invoice.amountZAR === 99) {
         lineItems.push({
           title: `Annual .co.za Domain Name Registration (${invoice.domainName})`,
@@ -108,12 +116,14 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
         });
       } else {
         const dom = site ? site.domain : invoice.domainName;
+        const isGlenanda = dom === 'glenanda-hotel.co.za' || invoice.websiteId === 'site-glenanda' || (site && site.id === 'site-glenanda');
+        const cozaPrice = isGlenanda ? 183 : 99;
         lineItems.push({
           title: `Annual .co.za Domain Registration & DNSSEC (${dom})`,
           desc: 'South African ZACR National Registry Renewal & Authoritative Anycast DNSSEC Protection',
           period: '1 Year',
-          unitPrice: 99,
-          total: 99,
+          unitPrice: cozaPrice,
+          total: cozaPrice,
         });
       }
     }

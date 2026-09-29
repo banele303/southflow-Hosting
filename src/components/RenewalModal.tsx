@@ -26,8 +26,8 @@ export const RenewalModal: React.FC<RenewalModalProps> = ({
 
   const isGlenanda = site.id === 'site-glenanda';
   const isElijah = site.id === 'site-elijah';
-  const domainFee = isElijah ? 356 : site.domain.endsWith('.com') ? 232 : site.domain.endsWith('.capetown') ? 245 : 99;
-  const domainLabel = isElijah ? '.org Domain (R356/yr)' : site.domain.endsWith('.com') ? '.com Domain (R232/yr)' : site.domain.endsWith('.capetown') ? '.capetown Geo-Domain (R245/yr)' : '.co.za Domain (R99/yr)';
+  const domainFee = isElijah ? 356 : isGlenanda ? 183 : site.domain.endsWith('.com') ? 232 : site.domain.endsWith('.capetown') ? 245 : 99;
+  const domainLabel = isElijah ? '.org Domain (R356/yr)' : isGlenanda ? '.co.za Domain (R183/yr)' : site.domain.endsWith('.com') ? '.com Domain (R232/yr)' : site.domain.endsWith('.capetown') ? '.capetown Geo-Domain (R245/yr)' : '.co.za Domain (R99/yr)';
 
   // Calculate pricing based on years (Hosting R1,345 + Domain)
   const baseRate = 1345 + domainFee;
