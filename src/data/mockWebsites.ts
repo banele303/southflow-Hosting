@@ -665,12 +665,24 @@ export const INITIAL_INVOICES: Invoice[] = [
     id: 'INV-2026-0927',
     websiteId: 'site-glenanda',
     domainName: 'glenanda-hotel.co.za',
-    type: 'hosting',
-    amountZAR: 1345,
+    type: 'bundle',
+    amountZAR: 1444, // Hosting R1,345 + .co.za Domain R99
     dateIssued: '2026-09-13',
     dueDate: '2026-09-27',
     status: 'Overdue',
-    description: 'Annual Cloud Web Hosting (R1,345/yr) - Deactivation Deadline: 29 September (1 Day Remaining)',
+    description: 'Annual Cloud Web Hosting (R1,345) + .co.za Domain Registry (R99) — Deactivation Deadline: 29 September (1 Day Grace Left)',
+    receiptNumber: 'REC-PENDING'
+  },
+  {
+    id: 'INV-2026-1001',
+    websiteId: 'site-elijah',
+    domainName: 'elijahchurch.org.za',
+    type: 'bundle',
+    amountZAR: 1701, // Hosting R1,345 + elijahchurch.org Domain R356
+    dateIssued: '2026-09-17',
+    dueDate: '2026-10-01',
+    status: 'Unpaid',
+    description: 'Annual Cloud Web Hosting (R1,345) + elijahchurch.org Domain Registry Renewal (R356 on Yearly Plan)',
     receiptNumber: 'REC-PENDING'
   },
   {
@@ -682,19 +694,7 @@ export const INITIAL_INVOICES: Invoice[] = [
     dateIssued: '2026-09-17',
     dueDate: '2026-10-01',
     status: 'Unpaid',
-    description: 'Annual .org Top-Level Domain Registry & DNSSEC Renewal (elijahchurch.org)',
-    receiptNumber: 'REC-PENDING'
-  },
-  {
-    id: 'INV-2026-1001',
-    websiteId: 'site-elijah',
-    domainName: 'elijahchurch.org.za',
-    type: 'hosting',
-    amountZAR: 1345,
-    dateIssued: '2026-09-17',
-    dueDate: '2026-10-01',
-    status: 'Unpaid',
-    description: 'Annual Cloud Web Hosting Renewal (R1,345/yr)',
+    description: 'Annual .org Top-Level Domain Registry & DNSSEC Renewal (elijahchurch.org - R356/yr Yearly Plan)',
     receiptNumber: 'REC-PENDING'
   },
   {
@@ -707,33 +707,33 @@ export const INITIAL_INVOICES: Invoice[] = [
     dueDate: '2026-01-05',
     status: 'Paid',
     paymentMethod: 'Instant EFT (Ozow)',
-    description: 'Annual .com Global Domain Registration & Whois Privacy Protection',
+    description: 'Annual .com Global Top-Level Domain Registration & WHOIS Privacy (R232/yr)',
     receiptNumber: 'REC-ZA-89102'
   },
   {
     id: 'INV-2026-0818',
     websiteId: 'site-pretorialegal',
     domainName: 'pretorialegal.co.za',
-    type: 'hosting',
-    amountZAR: 1345,
+    type: 'bundle',
+    amountZAR: 1444, // Hosting R1,345 + .co.za Domain R99
     dateIssued: '2026-08-04',
     dueDate: '2026-08-18',
     status: 'Paid',
     paymentMethod: 'Instant EFT (Ozow)',
-    description: 'Annual Cloud Web Hosting Renewal (R1,345/yr)',
+    description: 'Annual Cloud Web Hosting (R1,345) + .co.za Domain Registration (R99)',
     receiptNumber: 'REC-ZA-89410'
   },
   {
     id: 'INV-2026-0714',
     websiteId: 'site-tablemountain',
     domainName: 'tablemountainbeer.capetown',
-    type: 'hosting',
-    amountZAR: 1345,
+    type: 'bundle',
+    amountZAR: 1590, // Hosting R1,345 + .capetown Geo-Domain R245
     dateIssued: '2026-06-30',
     dueDate: '2026-07-14',
     status: 'Paid',
     paymentMethod: 'Credit Card (Mastercard)',
-    description: 'Annual Cloud Web Hosting Renewal (R1,345/yr)',
+    description: 'Annual Cloud Web Hosting (R1,345) + .capetown Geo-Domain Registration (R245)',
     receiptNumber: 'REC-ZA-88204'
   }
 ];

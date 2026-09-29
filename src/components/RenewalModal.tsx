@@ -24,8 +24,13 @@ export const RenewalModal: React.FC<RenewalModalProps> = ({
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
 
-  // Calculate pricing based on years
-  const baseRate = 1345;
+  const isGlenanda = site.id === 'site-glenanda';
+  const isElijah = site.id === 'site-elijah';
+  const domainFee = isElijah ? 356 : site.domain.endsWith('.com') ? 232 : site.domain.endsWith('.capetown') ? 245 : 99;
+  const domainLabel = isElijah ? '.org Domain (R356/yr)' : site.domain.endsWith('.com') ? '.com Domain (R232/yr)' : site.domain.endsWith('.capetown') ? '.capetown Geo-Domain (R245/yr)' : '.co.za Domain (R99/yr)';
+
+  // Calculate pricing based on years (Hosting R1,345 + Domain)
+  const baseRate = 1345 + domainFee;
   let subtotal = baseRate * durationYears;
   let discount = 0;
   if (durationYears === 2) {
@@ -34,9 +39,6 @@ export const RenewalModal: React.FC<RenewalModalProps> = ({
     discount = Math.round(subtotal * 0.10); // 10% discount
   }
   const finalTotal = subtotal - discount;
-
-  const isGlenanda = site.id === 'site-glenanda';
-  const isElijah = site.id === 'site-elijah';
 
   const handlePay = () => {
     setIsProcessing(true);
@@ -284,7 +286,11 @@ export const RenewalModal: React.FC<RenewalModalProps> = ({
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 text-xs">
               <div className="flex justify-between text-slate-400">
                 <span>Hosting Plan:</span>
-                <span className="text-slate-200">Yearly Cloud Host (R1,345/yr)</span>
+                <span className="text-slate-200">Yearly Cloud Host Pro (R1,345/yr)</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Domain Registry:</span>
+                <span className="text-indigo-300 font-semibold">{domainLabel}</span>
               </div>
               <div className="flex justify-between text-slate-400">
                 <span>Duration:</span>

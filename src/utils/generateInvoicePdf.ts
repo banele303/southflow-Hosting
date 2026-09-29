@@ -13,37 +13,110 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
     const statusColor = isPaid ? '#10b981' : isOverdue ? '#ef4444' : '#f59e0b';
     const statusBg = isPaid ? '#ecfdf5' : isOverdue ? '#fef2f2' : '#fffbeb';
 
-    // Calculate dynamic subtotal and 15% VAT
-    const totalAmount = invoice.amountZAR;
+    // Detect if this is a domain-only invoice or hosting/bundle invoice
+    const isDomainOnly = invoice.type === 'domain' || invoice.id.startsWith('INV-DOM-');
+    const isElijahOrg = invoice.domainName === 'elijahchurch.org' || invoice.websiteId === 'site-elijah' || (site && site.id === 'site-elijah');
+    const isComDomain = invoice.domainName.endsWith('.com') || (site && site.domain.endsWith('.com'));
+    const isCapeTownDomain = invoice.domainName.endsWith('.capetown') || (site && site.domain.endsWith('.capetown'));
+
+    interface InvoiceLineItem {
+      title: string;
+      desc: string;
+      period: string;
+      unitPrice: number;
+      total: number;
+    }
+
+    const lineItems: InvoiceLineItem[] = [];
+
+    if (isDomainOnly) {
+      if (isElijahOrg || invoice.amountZAR === 356) {
+        lineItems.push({
+          title: 'Annual .org Top-Level Domain Registry (elijahchurch.org)',
+          desc: 'Official Elijah Church International .org Non-Profit & Institutional Registry Fee (Yearly Plan), 100% Anycast DNSSEC Signed & WHOIS Privacy Protection',
+          period: '1 Year (Yearly Plan)',
+          unitPrice: 356,
+          total: 356,
+        });
+      } else if (isComDomain || invoice.amountZAR === 232) {
+        lineItems.push({
+          title: `Annual .com Global Top-Level Domain Registration (${invoice.domainName})`,
+          desc: 'ICANN Accredited Global .com Registry Renewal, DNSSEC Signed, Anycast Cloudflare/Teraco DNS Routing & WHOIS Privacy Protection',
+          period: '1 Year',
+          unitPrice: 232,
+          total: 232,
+        });
+      } else if (invoice.domainName.endsWith('.co.za') || invoice.amountZAR === 99) {
+        lineItems.push({
+          title: `Annual .co.za Domain Name Registration (${invoice.domainName})`,
+          desc: 'South African ZACR National Registry Renewal & Authoritative Anycast DNSSEC Protection',
+          period: '1 Year',
+          unitPrice: 99,
+          total: 99,
+        });
+      } else {
+        lineItems.push({
+          title: `Annual Top-Level Domain Registration & DNSSEC (${invoice.domainName})`,
+          desc: 'Top-level domain annual renewal, WHOIS privacy protection, and Anycast authoritative DNS',
+          period: '1 Year',
+          unitPrice: invoice.amountZAR,
+          total: invoice.amountZAR,
+        });
+      }
+    } else {
+      // Hosting + Domain bundle invoice
+      lineItems.push({
+        title: `Annual Cloud Web Hosting Pro (${site ? site.name : invoice.domainName})`,
+        desc: '40GB NVMe Gen4 Storage (RAID 10), LiteSpeed Enterprise, Uncapped 10Gbps NAPAfrica Bandwidth, Unlimited IMAP/POP3 Mailboxes, TLS 1.3 SSL, Daily Offsite Backups',
+        period: '12 Months',
+        unitPrice: 1345,
+        total: 1345,
+      });
+
+      // Domain itemized with exact price - NEVER R0.00
+      if (isElijahOrg) {
+        lineItems.push({
+          title: 'Annual .org Domain Registration & Anycast DNSSEC (elijahchurch.org)',
+          desc: 'Official Elijah Church International .org Non-Profit Top-Level Domain Registry Fee on Yearly Plan, DNSSEC Cryptographic Protection & WHOIS Identity Shield',
+          period: '1 Year (Yearly Plan)',
+          unitPrice: 356,
+          total: 356,
+        });
+      } else if (isComDomain) {
+        const dom = site ? site.domain : invoice.domainName;
+        lineItems.push({
+          title: `Annual .com Global Domain Registration (${dom})`,
+          desc: 'ICANN Accredited Global Registry Annual Renewal, DNSSEC Signed & WHOIS Privacy Protection',
+          period: '1 Year',
+          unitPrice: 232,
+          total: 232,
+        });
+      } else if (isCapeTownDomain) {
+        const dom = site ? site.domain : invoice.domainName;
+        lineItems.push({
+          title: `Annual .capetown Geo-TLD Domain Registration (${dom})`,
+          desc: 'Cape Town Geo-TLD Registry Fee, Anycast DNSSEC & WHOIS Privacy Protection',
+          period: '1 Year',
+          unitPrice: 245,
+          total: 245,
+        });
+      } else {
+        const dom = site ? site.domain : invoice.domainName;
+        lineItems.push({
+          title: `Annual .co.za Domain Registration & DNSSEC (${dom})`,
+          desc: 'South African ZACR National Registry Renewal & Authoritative Anycast DNSSEC Protection',
+          period: '1 Year',
+          unitPrice: 99,
+          total: 99,
+        });
+      }
+    }
+
+    // Dynamic totals matching itemized rows
+    const totalAmount = lineItems.reduce((acc, item) => acc + item.total, 0);
     const subtotal = totalAmount / 1.15;
     const vat = totalAmount - subtotal;
-
-    // Detect if this is a domain invoice or hosting invoice
-    const isDomain = invoice.type === 'domain' || invoice.domainName === 'elijahchurch.org' || totalAmount === 356 || totalAmount === 232;
-    const isElijahOrg = invoice.domainName === 'elijahchurch.org' || totalAmount === 356;
-    const isComDomain = invoice.domainName.endsWith('.com') || totalAmount === 232;
-
-    let lineItemTitle = '';
-    let lineItemDesc = '';
-    let lineItemPeriod = '1 Year';
-
-    if (isElijahOrg) {
-      lineItemTitle = `Annual .org Domain Registration & Anycast DNSSEC (elijahchurch.org)`;
-      lineItemDesc = `Official Elijah Church .org Non-Profit & Institutional Top-Level Domain Registry Fee, WHOIS ID Protection, 100% Anycast DNSSEC Signed`;
-      lineItemPeriod = '1 Year (Yearly Plan)';
-    } else if (isComDomain) {
-      lineItemTitle = `Annual .com Global Top-Level Domain Registration (${invoice.domainName})`;
-      lineItemDesc = `ICANN Global .com Registry Annual Renewal, DNSSEC Signed, Anycast Cloudflare/Teraco DNS Routing & WHOIS Privacy Protection`;
-      lineItemPeriod = '1 Year';
-    } else if (isDomain) {
-      lineItemTitle = `Annual Domain Name Registration & DNSSEC (${invoice.domainName})`;
-      lineItemDesc = `Top-level domain annual renewal, WHOIS privacy protection, and Anycast authoritative DNS`;
-      lineItemPeriod = '1 Year';
-    } else {
-      lineItemTitle = `Annual High-Performance Cloud Web Hosting (${invoice.domainName})`;
-      lineItemDesc = `40GB NVMe Gen4 Storage (RAID 10), LiteSpeed Enterprise, Uncapped 10Gbps NAPAfrica Bandwidth, Unlimited IMAP/POP3 Mailboxes, Automated 30-Day Daily Offsite Backups`;
-      lineItemPeriod = '12 Months';
-    }
+    const isDomain = isDomainOnly;
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -277,47 +350,19 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
               </tr>
             </thead>
             <tbody>
+              ${lineItems.map(item => `
               <tr>
                 <td>
-                  <strong style="color: #111827;">${lineItemTitle}</strong><br>
+                  <strong style="color: #111827;">${item.title}</strong><br>
                   <span style="font-size: 11px; color: #6b7280;">
-                    ${lineItemDesc}
+                    ${item.desc}
                   </span>
                 </td>
-                <td style="text-align: center;">${lineItemPeriod}</td>
-                <td style="text-align: right; font-family: monospace;">R${subtotal.toFixed(2)}</td>
-                <td style="text-align: right; font-family: monospace;">R${subtotal.toFixed(2)}</td>
+                <td style="text-align: center;">${item.period}</td>
+                <td style="text-align: right; font-family: monospace;">R${item.unitPrice.toLocaleString()}.00</td>
+                <td style="text-align: right; font-family: monospace; font-weight: 600;">R${item.total.toLocaleString()}.00</td>
               </tr>
-              ${isDomain ? `
-              <tr>
-                <td>
-                  <strong style="color: #111827;">DNSSEC & WHOIS Identity Privacy Shield</strong><br>
-                  <span style="font-size: 11px; color: #6b7280;">Cryptographic DNS security against cache poisoning and domain spoofing</span>
-                </td>
-                <td style="text-align: center;">1 Year</td>
-                <td style="text-align: right; font-family: monospace; color: #059669;">INCLUDED</td>
-                <td style="text-align: right; font-family: monospace; color: #059669;">R0.00</td>
-              </tr>
-              ` : `
-              <tr>
-                <td>
-                  <strong style="color: #111827;">.co.za Domain Annual Registry & DNSSEC Renewal</strong><br>
-                  <span style="font-size: 11px; color: #6b7280;">Included complimentary with annual R1,345 hosting plan</span>
-                </td>
-                <td style="text-align: center;">1 Year</td>
-                <td style="text-align: right; font-family: monospace; color: #059669;">FREE</td>
-                <td style="text-align: right; font-family: monospace; color: #059669;">R0.00</td>
-              </tr>
-              <tr>
-                <td>
-                  <strong style="color: #111827;">Let's Encrypt Wildcard TLS 1.3 Certificate</strong><br>
-                  <span style="font-size: 11px; color: #6b7280;">Automated SSL certificate with zero-downtime auto-renewal</span>
-                </td>
-                <td style="text-align: center;">1 Year</td>
-                <td style="text-align: right; font-family: monospace; color: #059669;">FREE</td>
-                <td style="text-align: right; font-family: monospace; color: #059669;">R0.00</td>
-              </tr>
-              `}
+              `).join('')}
             </tbody>
           </table>
 

@@ -34,7 +34,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
   const filteredInvoices = invoices.filter(inv => {
     if (filterType === 'all') return true;
     if (filterType === 'domain') return inv.type === 'domain' || inv.amountZAR === 356 || inv.amountZAR === 232;
-    return inv.type === 'hosting' || inv.amountZAR === 1345;
+    return inv.type === 'hosting' || inv.type === 'bundle' || inv.amountZAR >= 1345;
   });
 
   return (
@@ -165,7 +165,11 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                     </span>
                   </td>
                   <td className="py-3.5 px-3 whitespace-nowrap">
-                    {isDomain ? (
+                    {inv.type === 'bundle' ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">
+                        HOSTING + DOMAIN
+                      </span>
+                    ) : isDomain ? (
                       <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-950 text-indigo-300 border border-indigo-800/60">
                         DOMAIN REGISTRY
                       </span>
@@ -247,34 +251,101 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
 
       {/* Tax Invoice Preview Modal */}
       {selectedInvoice && (() => {
-        const isDomain = selectedInvoice.type === 'domain' || selectedInvoice.domainName === 'elijahchurch.org' || selectedInvoice.amountZAR === 356 || selectedInvoice.amountZAR === 232;
-        const isElijahOrg = selectedInvoice.domainName === 'elijahchurch.org' || selectedInvoice.amountZAR === 356;
-        const isCom = selectedInvoice.domainName.endsWith('.com') || selectedInvoice.amountZAR === 232;
-        const total = selectedInvoice.amountZAR;
-        const subtotal = (total / 1.15).toFixed(2);
-        const vat = (total - (total / 1.15)).toFixed(2);
+        const isDomainOnly = selectedInvoice.type === 'domain' || selectedInvoice.id.startsWith('INV-DOM-');
+        const isElijahOrg = selectedInvoice.domainName === 'elijahchurch.org' || selectedInvoice.websiteId === 'site-elijah';
+        const isCom = selectedInvoice.domainName.endsWith('.com');
+        const isCapeTown = selectedInvoice.domainName.endsWith('.capetown');
+        const site = getWebsite(selectedInvoice.websiteId);
 
-        let itemTitle = '';
-        let itemDesc = '';
-        let itemPeriod = '1 Year';
-
-        if (isElijahOrg) {
-          itemTitle = 'Annual .org Top-Level Domain Registry & DNSSEC Renewal (elijahchurch.org)';
-          itemDesc = 'Official Elijah Church International .org registry fee, WHOIS identity privacy protection, 100% Anycast DNSSEC signed';
-          itemPeriod = '1 Year (Yearly Plan)';
-        } else if (isCom) {
-          itemTitle = `Annual .com Global Domain Registration & WHOIS Privacy (${selectedInvoice.domainName})`;
-          itemDesc = 'ICANN accredited global registry renewal, DNSSEC, Anycast routing and identity shield';
-          itemPeriod = '1 Year';
-        } else if (isDomain) {
-          itemTitle = `Annual Domain Name Registration & DNSSEC (${selectedInvoice.domainName})`;
-          itemDesc = 'Annual domain registry renewal, Anycast authoritative DNS, and WHOIS privacy';
-          itemPeriod = '1 Year';
-        } else {
-          itemTitle = `Annual Cloud Web Hosting & .co.za Renewal (${selectedInvoice.domainName})`;
-          itemDesc = '40GB NVMe SSD, LiteSpeed, Unlimited Mailboxes, TLS 1.3 SSL, Daily Offsite Backups, Free .co.za Renewal';
-          itemPeriod = '12 Months';
+        interface ModalLineItem {
+          title: string;
+          desc: string;
+          period: string;
+          unitPrice: number;
+          total: number;
         }
+
+        const modalLineItems: ModalLineItem[] = [];
+
+        if (isDomainOnly) {
+          if (isElijahOrg || selectedInvoice.amountZAR === 356) {
+            modalLineItems.push({
+              title: 'Annual .org Top-Level Domain Registry (elijahchurch.org)',
+              desc: 'Official Elijah Church International .org Non-Profit & Institutional Registry Fee (Yearly Plan), 100% Anycast DNSSEC Signed & WHOIS Identity Privacy Shield',
+              period: '1 Year (Yearly Plan)',
+              unitPrice: 356,
+              total: 356,
+            });
+          } else if (isCom || selectedInvoice.amountZAR === 232) {
+            modalLineItems.push({
+              title: `Annual .com Global Top-Level Domain Registration (${selectedInvoice.domainName})`,
+              desc: 'ICANN Accredited Global .com Registry Renewal, DNSSEC Signed, Anycast Cloudflare/Teraco DNS Routing & WHOIS Privacy Protection',
+              period: '1 Year',
+              unitPrice: 232,
+              total: 232,
+            });
+          } else {
+            modalLineItems.push({
+              title: `Annual .co.za Domain Name Registration (${selectedInvoice.domainName})`,
+              desc: 'South African ZACR National Registry Renewal & Authoritative Anycast DNSSEC Protection',
+              period: '1 Year',
+              unitPrice: 99,
+              total: 99,
+            });
+          }
+        } else {
+          // Hosting line item
+          modalLineItems.push({
+            title: `Annual Cloud Web Hosting Pro (${site ? site.name : selectedInvoice.domainName})`,
+            desc: '40GB NVMe Gen4 Storage (RAID 10), LiteSpeed Enterprise, Uncapped 10Gbps NAPAfrica Bandwidth, Unlimited IMAP/POP3 Mailboxes, TLS 1.3 SSL, Daily Offsite Backups',
+            period: '12 Months',
+            unitPrice: 1345,
+            total: 1345,
+          });
+
+          // Itemize Domain with actual price - NEVER R0.00
+          if (isElijahOrg) {
+            modalLineItems.push({
+              title: 'Annual .org Domain Registration & Anycast DNSSEC (elijahchurch.org)',
+              desc: 'Official Elijah Church International .org Non-Profit Top-Level Domain Registry Fee on Yearly Plan, DNSSEC Cryptographic Protection & WHOIS Identity Shield',
+              period: '1 Year (Yearly Plan)',
+              unitPrice: 356,
+              total: 356,
+            });
+          } else if (isCom) {
+            const dom = site ? site.domain : selectedInvoice.domainName;
+            modalLineItems.push({
+              title: `Annual .com Global Domain Registration (${dom})`,
+              desc: 'ICANN Accredited Global Registry Annual Renewal, DNSSEC Signed & WHOIS Privacy Protection',
+              period: '1 Year',
+              unitPrice: 232,
+              total: 232,
+            });
+          } else if (isCapeTown) {
+            const dom = site ? site.domain : selectedInvoice.domainName;
+            modalLineItems.push({
+              title: `Annual .capetown Geo-TLD Domain Registration (${dom})`,
+              desc: 'Cape Town Geo-TLD Registry Fee, Anycast DNSSEC & WHOIS Privacy Protection',
+              period: '1 Year',
+              unitPrice: 245,
+              total: 245,
+            });
+          } else {
+            const dom = site ? site.domain : selectedInvoice.domainName;
+            modalLineItems.push({
+              title: `Annual .co.za Domain Registration & DNSSEC (${dom})`,
+              desc: 'South African ZACR National Registry Renewal & Authoritative Anycast DNSSEC Protection',
+              period: '1 Year',
+              unitPrice: 99,
+              total: 99,
+            });
+          }
+        }
+
+        const totalAmount = modalLineItems.reduce((acc, it) => acc + it.total, 0);
+        const subtotal = (totalAmount / 1.15).toFixed(2);
+        const vat = (totalAmount - totalAmount / 1.15).toFixed(2);
+        const isDomain = isDomainOnly;
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
@@ -313,10 +384,10 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                 <div>
                   <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">Billed To (Client / Domain):</span>
                   <span className="font-bold text-slate-900 text-sm block">
-                    {getWebsite(selectedInvoice.websiteId)?.name || (selectedInvoice.domainName === 'elijahchurch.org' ? 'Elijah Church International' : selectedInvoice.domainName)}
+                    {site?.name || (selectedInvoice.domainName === 'elijahchurch.org' ? 'Elijah Church International' : selectedInvoice.domainName)}
                   </span>
                   <span className="font-mono text-slate-600 block">{selectedInvoice.domainName}</span>
-                  <span className="text-slate-500">Service: {isDomain ? 'Domain Name Registration' : 'Cloud Web Hosting'}</span>
+                  <span className="text-slate-500">Service: {isDomain ? 'Domain Name Registration & DNSSEC' : 'Cloud Web Hosting Pro + Domain'}</span>
                 </div>
                 <div className="text-right space-y-1">
                   <div><span className="text-slate-500">Date Issued:</span> <span className="font-mono font-medium">{selectedInvoice.dateIssued}</span></div>
@@ -333,28 +404,22 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   <tr className="bg-slate-50 text-slate-600 font-bold text-left">
                     <th className="py-2.5 px-3">Description</th>
                     <th className="py-2.5 px-3 text-center">Period</th>
-                    <th className="py-2.5 px-3 text-right">Amount (ZAR)</th>
+                    <th className="py-2.5 px-3 text-right">Unit Price</th>
+                    <th className="py-2.5 px-3 text-right">Total (ZAR)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  <tr>
-                    <td className="py-3 px-3">
-                      <strong className="text-slate-900 block">{itemTitle}</strong>
-                      <span className="text-slate-500 text-[11px]">{itemDesc}</span>
-                    </td>
-                    <td className="py-3 px-3 text-center text-slate-600">{itemPeriod}</td>
-                    <td className="py-3 px-3 text-right font-mono font-semibold">R{subtotal}</td>
-                  </tr>
-                  {isDomain ? (
-                    <tr>
+                  {modalLineItems.map((item, idx) => (
+                    <tr key={idx}>
                       <td className="py-3 px-3">
-                        <strong className="text-slate-900 block">DNSSEC Cryptographic Security & Privacy Shield</strong>
-                        <span className="text-slate-500 text-[11px]">Included with annual registry plan</span>
+                        <strong className="text-slate-900 block">{item.title}</strong>
+                        <span className="text-slate-500 text-[11px]">{item.desc}</span>
                       </td>
-                      <td className="py-3 px-3 text-center text-slate-600">1 Year</td>
-                      <td className="py-3 px-3 text-right font-mono font-semibold text-emerald-600">INCLUDED</td>
+                      <td className="py-3 px-3 text-center text-slate-600">{item.period}</td>
+                      <td className="py-3 px-3 text-right font-mono font-semibold text-slate-700">R{item.unitPrice.toLocaleString()}.00</td>
+                      <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">R{item.total.toLocaleString()}.00</td>
                     </tr>
-                  ) : null}
+                  ))}
                 </tbody>
               </table>
 
@@ -371,7 +436,7 @@ export const InvoicesView: React.FC<InvoicesViewProps> = ({
                   </div>
                   <div className="flex justify-between text-sm font-black text-black pt-2 border-t">
                     <span>Total Amount Due:</span>
-                    <span className="text-base text-black font-mono">R{total.toLocaleString()}.00 ZAR</span>
+                    <span className="text-base text-black font-mono">R{totalAmount.toLocaleString()}.00 ZAR</span>
                   </div>
                 </div>
               </div>
