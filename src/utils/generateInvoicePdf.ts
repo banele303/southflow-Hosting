@@ -1,9 +1,7 @@
 import { Invoice, HostedWebsite } from '../types/hosting';
 
 export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWebsite) {
-  // Try using jsPDF dynamically if available
   try {
-    // We dynamically import or generate a clean, print-ready document window
     const printWindow = window.open('', '_blank', 'width=850,height=1000');
     if (!printWindow) {
       alert('Please allow popups to download/print the invoice.');
@@ -14,6 +12,38 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
     const isOverdue = invoice.status === 'Overdue';
     const statusColor = isPaid ? '#10b981' : isOverdue ? '#ef4444' : '#f59e0b';
     const statusBg = isPaid ? '#ecfdf5' : isOverdue ? '#fef2f2' : '#fffbeb';
+
+    // Calculate dynamic subtotal and 15% VAT
+    const totalAmount = invoice.amountZAR;
+    const subtotal = totalAmount / 1.15;
+    const vat = totalAmount - subtotal;
+
+    // Detect if this is a domain invoice or hosting invoice
+    const isDomain = invoice.type === 'domain' || invoice.domainName === 'elijahchurch.org' || totalAmount === 356 || totalAmount === 232;
+    const isElijahOrg = invoice.domainName === 'elijahchurch.org' || totalAmount === 356;
+    const isComDomain = invoice.domainName.endsWith('.com') || totalAmount === 232;
+
+    let lineItemTitle = '';
+    let lineItemDesc = '';
+    let lineItemPeriod = '1 Year';
+
+    if (isElijahOrg) {
+      lineItemTitle = `Annual .org Domain Registration & Anycast DNSSEC (elijahchurch.org)`;
+      lineItemDesc = `Official Elijah Church .org Non-Profit & Institutional Top-Level Domain Registry Fee, WHOIS ID Protection, 100% Anycast DNSSEC Signed`;
+      lineItemPeriod = '1 Year (Yearly Plan)';
+    } else if (isComDomain) {
+      lineItemTitle = `Annual .com Global Top-Level Domain Registration (${invoice.domainName})`;
+      lineItemDesc = `ICANN Global .com Registry Annual Renewal, DNSSEC Signed, Anycast Cloudflare/Teraco DNS Routing & WHOIS Privacy Protection`;
+      lineItemPeriod = '1 Year';
+    } else if (isDomain) {
+      lineItemTitle = `Annual Domain Name Registration & DNSSEC (${invoice.domainName})`;
+      lineItemDesc = `Top-level domain annual renewal, WHOIS privacy protection, and Anycast authoritative DNS`;
+      lineItemPeriod = '1 Year';
+    } else {
+      lineItemTitle = `Annual High-Performance Cloud Web Hosting (${invoice.domainName})`;
+      lineItemDesc = `40GB NVMe Gen4 Storage (RAID 10), LiteSpeed Enterprise, Uncapped 10Gbps NAPAfrica Bandwidth, Unlimited IMAP/POP3 Mailboxes, Automated 30-Day Daily Offsite Backups`;
+      lineItemPeriod = '12 Months';
+    }
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -149,7 +179,7 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
             margin-bottom: 30px;
           }
           .totals-table {
-            width: 300px;
+            width: 320px;
           }
           .totals-table tr td {
             padding: 6px 0;
@@ -222,11 +252,11 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
 
           <div class="meta-grid">
             <div class="meta-col">
-              <h4>Billed To (Client):</h4>
-              <p><strong>${site ? site.name : invoice.domainName}</strong></p>
-              <p>Domain: <span style="font-family: monospace;">${invoice.domainName}</span></p>
-              <p>Server: ${site ? site.serverLocation : 'Teraco JB1, Johannesburg'}</p>
-              <p>IP Address: <span style="font-family: monospace;">${site ? site.ipAddress : '102.130.114.42'}</span></p>
+              <h4>Billed To (Client / Domain):</h4>
+              <p><strong>${site ? site.name : (invoice.domainName === 'elijahchurch.org' ? 'Elijah Church International' : invoice.domainName)}</strong></p>
+              <p>Domain: <span style="font-family: monospace; font-weight: 600;">${invoice.domainName}</span></p>
+              <p>Invoice Type: <strong style="text-transform: uppercase;">${isDomain ? 'Domain Registration & DNS' : 'Cloud Web Hosting'}</strong></p>
+              <p>Registry / Datacenter: ${isDomain ? 'ICANN / ZACR Authoritative Anycast' : (site ? site.serverLocation : 'Teraco JB1, Johannesburg')}</p>
             </div>
             <div class="meta-col" style="text-align: right;">
               <h4>Billing Details:</h4>
@@ -249,20 +279,30 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
             <tbody>
               <tr>
                 <td>
-                  <strong style="color: #111827;">Annual High-Performance Cloud Web Hosting</strong><br>
+                  <strong style="color: #111827;">${lineItemTitle}</strong><br>
                   <span style="font-size: 11px; color: #6b7280;">
-                    40GB NVMe Gen4 Storage (RAID 10), LiteSpeed Enterprise, Uncapped 10Gbps NAPAfrica Bandwidth,
-                    Unlimited IMAP/POP3 Mailboxes, Automated 30-Day Daily Offsite Backups
+                    ${lineItemDesc}
                   </span>
                 </td>
-                <td style="text-align: center;">12 Months</td>
-                <td style="text-align: right; font-family: monospace;">R1,169.57</td>
-                <td style="text-align: right; font-family: monospace;">R1,169.57</td>
+                <td style="text-align: center;">${lineItemPeriod}</td>
+                <td style="text-align: right; font-family: monospace;">R${subtotal.toFixed(2)}</td>
+                <td style="text-align: right; font-family: monospace;">R${subtotal.toFixed(2)}</td>
               </tr>
+              ${isDomain ? `
+              <tr>
+                <td>
+                  <strong style="color: #111827;">DNSSEC & WHOIS Identity Privacy Shield</strong><br>
+                  <span style="font-size: 11px; color: #6b7280;">Cryptographic DNS security against cache poisoning and domain spoofing</span>
+                </td>
+                <td style="text-align: center;">1 Year</td>
+                <td style="text-align: right; font-family: monospace; color: #059669;">INCLUDED</td>
+                <td style="text-align: right; font-family: monospace; color: #059669;">R0.00</td>
+              </tr>
+              ` : `
               <tr>
                 <td>
                   <strong style="color: #111827;">.co.za Domain Annual Registry & DNSSEC Renewal</strong><br>
-                  <span style="font-size: 11px; color: #6b7280;">Included complimentary with annual hosting plan</span>
+                  <span style="font-size: 11px; color: #6b7280;">Included complimentary with annual R1,345 hosting plan</span>
                 </td>
                 <td style="text-align: center;">1 Year</td>
                 <td style="text-align: right; font-family: monospace; color: #059669;">FREE</td>
@@ -270,13 +310,14 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
               </tr>
               <tr>
                 <td>
-                  <strong style="color: #111827;">Let's Encrypt Wildcard SSL Certificate</strong><br>
-                  <span style="font-size: 11px; color: #6b7280;">Automated TLS 1.3 Certificate with zero-downtime auto renewal</span>
+                  <strong style="color: #111827;">Let's Encrypt Wildcard TLS 1.3 Certificate</strong><br>
+                  <span style="font-size: 11px; color: #6b7280;">Automated SSL certificate with zero-downtime auto-renewal</span>
                 </td>
                 <td style="text-align: center;">1 Year</td>
                 <td style="text-align: right; font-family: monospace; color: #059669;">FREE</td>
                 <td style="text-align: right; font-family: monospace; color: #059669;">R0.00</td>
               </tr>
+              `}
             </tbody>
           </table>
 
@@ -284,15 +325,15 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
             <table class="totals-table">
               <tr>
                 <td>Subtotal (Excl. VAT):</td>
-                <td style="text-align: right; font-family: monospace;">R1,169.57</td>
+                <td style="text-align: right; font-family: monospace;">R${subtotal.toFixed(2)}</td>
               </tr>
               <tr>
-                <td>VAT (15% Standard Rate):</td>
-                <td style="text-align: right; font-family: monospace;">R175.43</td>
+                <td>VAT (15% South African Standard Rate):</td>
+                <td style="text-align: right; font-family: monospace;">R${vat.toFixed(2)}</td>
               </tr>
               <tr class="total-row">
                 <td>Total Due (ZAR):</td>
-                <td style="text-align: right; font-family: monospace; color: #000;">R${invoice.amountZAR.toLocaleString()}.00</td>
+                <td style="text-align: right; font-family: monospace; color: #000;">R${totalAmount.toLocaleString()}.00</td>
               </tr>
             </table>
           </div>
@@ -322,7 +363,6 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
         </div>
 
         <script>
-          // Automatically trigger print dialog on render
           window.onload = function() {
             setTimeout(function() {
               window.print();
