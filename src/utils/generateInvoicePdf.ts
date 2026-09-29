@@ -277,8 +277,8 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
     doc.setFontSize(8.5);
     doc.setTextColor(255, 255, 255);
     doc.text('DESCRIPTION', margin + 12, tableHeaderY + 14.5);
-    doc.text('PERIOD', margin + 285, tableHeaderY + 14.5, { align: 'center' });
-    doc.text('UNIT PRICE (ZAR)', margin + 395, tableHeaderY + 14.5, { align: 'right' });
+    doc.text('PERIOD', margin + 295, tableHeaderY + 14.5, { align: 'center' });
+    doc.text('UNIT PRICE (ZAR)', margin + 420, tableHeaderY + 14.5, { align: 'right' });
     doc.text('TOTAL (ZAR)', rightAlignX - 12, tableHeaderY + 14.5, { align: 'right' });
 
     // Line Items Rows
@@ -286,8 +286,27 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
 
     lineItems.forEach((item, index) => {
       const rowStartY = currentY;
-      const descLines = doc.splitTextToSize(item.desc, 250);
-      const rowHeight = Math.max(38, 22 + descLines.length * 11);
+
+      // Wrap Title to 230pt so it never bleeds into Period column
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      const titleLines = doc.splitTextToSize(item.title, 230);
+
+      // Wrap Description to 230pt
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      const descLines = doc.splitTextToSize(item.desc, 230);
+
+      const titleLineHeight = 12;
+      const descLineHeight = 10;
+      const paddingTop = 9;
+      const titleToDescGap = 3;
+      const paddingBottom = 9;
+
+      const titleBlockHeight = titleLines.length * titleLineHeight;
+      const descBlockHeight = descLines.length * descLineHeight;
+      const contentHeight = titleBlockHeight + titleToDescGap + descBlockHeight;
+      const rowHeight = Math.max(50, paddingTop + contentHeight + paddingBottom);
 
       // Alternating row background
       if (index % 2 === 1) {
@@ -295,34 +314,35 @@ export function downloadProfessionalInvoicePDF(invoice: Invoice, site?: HostedWe
         doc.rect(margin, rowStartY, contentWidth, rowHeight, 'F');
       }
 
-      // Title & Description
+      // Title lines (wrapped, fully contained in Description column)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
+      doc.setFontSize(9);
       doc.setTextColor(17, 24, 39);
-      doc.text(item.title, margin + 12, rowStartY + 14);
+      doc.text(titleLines, margin + 12, rowStartY + paddingTop + 8);
 
+      // Description lines (wrapped right below title without overlap)
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
       doc.setTextColor(107, 114, 128);
-      doc.text(descLines, margin + 12, rowStartY + 26);
+      doc.text(descLines, margin + 12, rowStartY + paddingTop + titleBlockHeight + titleToDescGap + 7);
 
-      // Period
+      // Period (Centered in Period column at margin + 295)
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8.5);
       doc.setTextColor(55, 65, 81);
-      doc.text(item.period, margin + 285, rowStartY + 18, { align: 'center' });
+      doc.text(item.period, margin + 295, rowStartY + paddingTop + 10, { align: 'center' });
 
-      // Unit Price
+      // Unit Price (Right aligned at margin + 420)
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(55, 65, 81);
-      doc.text(`R${item.unitPrice.toLocaleString()}.00`, margin + 395, rowStartY + 18, { align: 'right' });
+      doc.text(`R${item.unitPrice.toLocaleString()}.00`, margin + 420, rowStartY + paddingTop + 10, { align: 'right' });
 
-      // Total
+      // Total (Right aligned at rightAlignX - 12)
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9.5);
       doc.setTextColor(17, 24, 39);
-      doc.text(`R${item.total.toLocaleString()}.00`, rightAlignX - 12, rowStartY + 18, { align: 'right' });
+      doc.text(`R${item.total.toLocaleString()}.00`, rightAlignX - 12, rowStartY + paddingTop + 10, { align: 'right' });
 
       // Row separator line
       doc.setDrawColor(229, 231, 235);
